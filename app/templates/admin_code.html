@@ -13,9 +13,9 @@
 {% block content %}
 <h1>Одновременный запуск на роботах</h1>
 <p>
-  Код уходит на выбранных роботов параллельно: Python выполняется действием
-  <code>execute_code</code>, программа из блоков — сохраняется и запускается как
-  Blockly-программа панели.
+  Код уходит на выбранных роботов параллельно. Python выполняется действием
+  <code>execute_code</code>. Файл Blockly с панели робота тоже уходит туда:
+  JSON точек и блоков сначала переводится в Python SDK, как это делает сама панель.
 </p>
 
 <div class="run-layout">
@@ -30,6 +30,12 @@
       <textarea id="source" rows="18" spellcheck="false"></textarea>
     </label>
 
+    <div class="file-row">
+      <label class="btn btn-ghost btn-sm" for="source-file">Загрузить файл</label>
+      <input id="source-file" type="file" accept=".json,.py,.txt,application/json,text/x-python,text/plain" hidden>
+      <span class="muted" id="source-file-name">JSON Blockly с панели или .py</span>
+    </div>
+
     <div class="code-hint" id="hint-python">
       <label style="display:flex;gap:8px;align-items:center;margin-bottom:8px;cursor:pointer">
         <input type="checkbox" id="wrap-sdk" checked
@@ -43,10 +49,11 @@
       Снимите галочку, если пишете полностью самостоятельный скрипт.
     </div>
     <div class="code-hint" id="hint-program" hidden>
-      Вставьте программу панели с ключом <code>Root</code> или простой список блоков:
-      <code>{"blocks":[{"type":"move_joints","positions":[0,20,20],"velocity":0.3},{"type":"delay","time":1}]}</code>.
-      Поддерживаются <code>move_joints</code>, <code>move_cartesian</code>,
-      <code>point</code>, <code>delay</code>, <code>audio</code>, <code>gpio</code>.
+      Вставьте или загрузите JSON, который панель сохраняет кнопкой «скачать»
+      (<code>jointPoints</code>, <code>cpiPoints</code>, <code>program.blocks</code>).
+      Он будет превращён в Python и выполнен так же, как на роботе.
+      Также принимаются программа с ключом <code>Root</code> и простой список
+      <code>{"blocks":[{"type":"move_joints","positions":[0,20,20],"velocity":0.3}]}</code>.
     </div>
 
     <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">

@@ -14,8 +14,7 @@ from .config import Robot, Settings
 from .programs import (
     DEFAULT_PROGRAM_NAME,
     ProgramError,
-    build_program_json,
-    wrap_python_program,
+    compile_run,
 )
 from .rosbridge import (
     EXECUTE_CODE_ACTION,
@@ -124,13 +123,7 @@ class CodeRunner:
         if not robots:
             raise ValueError("Не выбран ни один робот")
 
-        payload: str
-        if kind == "program":
-            payload = build_program_json(source)
-        else:
-            if not source.strip():
-                raise ProgramError("Код пуст")
-            payload = wrap_python_program(source) if wrap_sdk else source
+        exec_kind, payload = compile_run(kind, source, wrap_sdk=wrap_sdk)
 
         job = RunJob(id=secrets.token_hex(6), kind=kind, source=source)
         job.runs = {
@@ -140,7 +133,9 @@ class CodeRunner:
         self._trim()
 
         job.task = asyncio.create_task(
-            self._run_all(job, robots, payload, python_version, requirements or [])
+            self._run_all(
+                job, robots, payload, python_version, requirements or [], exec_kind
+            )
         )
         return job
 
@@ -157,10 +152,11 @@ class CodeRunner:
         payload: str,
         python_version: str,
         requirements: list[str],
+        exec_kind: RunKind,
     ) -> None:
         await asyncio.gather(
             *(
-                self._run_one(job, robot, payload, python_version, requirements)
+                self._run_one(job, robot, payload, python_version, requirements, exec_kind)
                 for robot in robots
             ),
             return_exceptions=True,
@@ -174,6 +170,7 @@ class CodeRunner:
         payload: str,
         python_version: str,
         requirements: list[str],
+        exec_kind: RunKind,
     ) -> None:
         run = job.runs[robot.id]
 
@@ -188,7 +185,7 @@ class CodeRunner:
 
         try:
             async with RosBridgeClient(robot.ros_url, timeout=self.settings.ros_timeout) as client:
-                if job.kind == "python":
+                if exec_kind == "python":
                     values = await client.run_action(
                         EXECUTE_CODE_ACTION,
                         EXECUTE_CODE_TYPE,

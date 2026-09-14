@@ -15,11 +15,34 @@
     program:
       JSON.stringify(
         {
-          blocks: [
-            { type: "move_joints", positions: [20, 0, 0], velocity: 0.3 },
-            { type: "delay", time: 1 },
-            { type: "move_joints", positions: [0, 0, 0], velocity: 0.3 },
+          jointPoints: [
+            [0, { id: 0, name: "Исходное положение", time: 0, positions: "0, -22.9, -45.83" }],
           ],
+          cpiPoints: [],
+          program: {
+            blocks: {
+              languageVersion: 0,
+              blocks: [
+                {
+                  type: "controls_repeat_ext",
+                  inputs: {
+                    TIMES: { shadow: { type: "math_number", fields: { NUM: 2 } } },
+                    DO: {
+                      block: {
+                        type: "move_to_point",
+                        extraState: { selectedPointId: "j0" },
+                        fields: {
+                          velocity: 0.3,
+                          acceleration: 0.3,
+                          plannerType: "PlannerType.PTP",
+                        },
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
         },
         null,
         2
@@ -28,6 +51,8 @@
 
   var source = document.getElementById("source");
   var sourceLabel = document.getElementById("source-label");
+  var sourceFile = document.getElementById("source-file");
+  var sourceFileName = document.getElementById("source-file-name");
   var picks = document.getElementById("robot-picks");
   var results = document.getElementById("results");
   var runButton = document.getElementById("run");
@@ -254,6 +279,39 @@
 
   sampleButton.addEventListener("click", function () {
     source.value = SAMPLES[kind];
+    sourceFileName.textContent = "JSON Blockly с панели или .py";
+  });
+
+  sourceFile.addEventListener("change", function () {
+    var file = sourceFile.files && sourceFile.files[0];
+    if (!file) {
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result || "");
+      var name = file.name || "";
+      var isPython = /\.py$/i.test(name) || (!/^\s*[{\[]/.test(text) && !/\.json$/i.test(name));
+      if (isPython) {
+        setKind("python");
+        source.value = text;
+      } else {
+        setKind("program");
+        try {
+          source.value = JSON.stringify(JSON.parse(text), null, 2) + "\n";
+        } catch (error) {
+          source.value = text;
+        }
+      }
+      sourceFileName.textContent = name;
+      errorBox.hidden = true;
+    };
+    reader.onerror = function () {
+      errorBox.textContent = "Не удалось прочитать файл.";
+      errorBox.hidden = false;
+    };
+    reader.readAsText(file, "utf-8");
+    sourceFile.value = "";
   });
 
   document.getElementById("clean-output").addEventListener("change", pollJob);

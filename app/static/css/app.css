@@ -772,6 +772,14 @@ body.panel-mode {
   font-size: 0.78rem;
 }
 
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: -4px 0 12px;
+}
+
 /* --- вход учителя --- */
 
 .login-wrap {
