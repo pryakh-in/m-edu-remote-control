@@ -50,18 +50,18 @@ Python-код исполняется на роботе в контейнере, 
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
 cp .env.example .env        # впишите TEACHER_PASSWORD и SECRET_KEY
-./.venv/bin/python -m uvicorn app.main:app --reload --port 8000
+./.venv/bin/python -m uvicorn app.main:app --reload --port 9000
 ```
 
-Ученик — <http://127.0.0.1:8000/>, учитель — <http://127.0.0.1:8000/admin>.
+Ученик — <http://127.0.0.1:9000/>, учитель — <http://127.0.0.1:9000/admin>.
 
 ## Развёртывание в Coolify
 
 1. **New Resource → Application** и укажите этот git-репозиторий.
    Удобнее **Dockerfile** (Coolify сам проксирует порт контейнера). Если берёте
    **Docker Compose**, не публикуйте порт на хост — в `docker-compose.yml` стоит
-   только `expose: ["8000"]`, иначе получите `Bind for 0.0.0.0:8000 failed`.
-2. **Ports Exposes**: `8000`. Health check: `GET /health`.
+   только `expose: ["9000"]`, иначе получите `Bind for 0.0.0.0:9000 failed`.
+2. **Ports Exposes**: `9000`. Health check: `GET /health`.
 3. **Environment variables** — минимум:
 
    | Переменная | Значение |
@@ -94,7 +94,7 @@ docker exec -it <container> python -c "import socket; print(socket.create_connec
 ```bash
 cp .env.example .env        # заполните TEACHER_PASSWORD и SECRET_KEY
 docker compose up -d --build
-# без Coolify добавьте в docker-compose.yml: ports: ["8000:8000"]
+# без Coolify добавьте в docker-compose.yml: ports: ["9000:9000"]
 ```
 
 ## Реестр роботов

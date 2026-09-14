@@ -16,15 +16,15 @@ services:
     volumes:
       - medu-data:/data
     # Не публикуем порт на хост: Coolify/Traefik ходят по внутренней сети.
-    # Локально без Coolify добавьте: ports: ["8000:8000"]
+    # Локально без Coolify добавьте: ports: ["9000:9000"]
     expose:
-      - "8000"
+      - "9000"
     healthcheck:
       test:
         - CMD
         - python
         - -c
-        - import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)
+        - import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:9000/health', timeout=4).status == 200 else 1)
       interval: 30s
       timeout: 5s
       retries: 3
