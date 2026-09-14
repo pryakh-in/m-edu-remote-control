@@ -42,6 +42,7 @@ def _context(request: Request, **extra) -> dict:
         "request": request,
         "school_name": settings.school_name,
         "lab_name": settings.lab_name,
+        "show_camera": True,
         **extra,
     }
 
@@ -53,7 +54,9 @@ def _context(request: Request, **extra) -> dict:
 async def login_page(request: Request):
     if is_teacher(request):
         return RedirectResponse("/admin", status_code=303)
-    return request.app.state.templates.TemplateResponse("admin_login.html", _context(request))
+    return request.app.state.templates.TemplateResponse(
+        "admin_login.html", _context(request, show_camera=False)
+    )
 
 
 @router.post("/login")
@@ -61,7 +64,7 @@ async def login(request: Request, password: str = Form(...)):
     if not verify_teacher_password(password):
         return request.app.state.templates.TemplateResponse(
             "admin_login.html",
-            _context(request, error="Неверный пароль."),
+            _context(request, error="Неверный пароль.", show_camera=False),
             status_code=401,
         )
     response = RedirectResponse("/admin", status_code=303)

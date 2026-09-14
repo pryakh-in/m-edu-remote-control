@@ -63,6 +63,13 @@ class Settings(BaseSettings):
     student_heartbeat_timeout: float = 90.0
     max_name_length: int = 40
 
+    camera_host: str = ""
+    camera_user: str = ""
+    camera_password: str = ""
+    camera_port: int = 554
+    camera_path: str = "/stream2"
+    camera_rtsp_url: str = ""
+
     def load_robots(self) -> list[Robot]:
         """Реестр роботов: файл в data_dir → переменная окружения → значения по умолчанию."""
         stored = self.robots_file
@@ -89,6 +96,10 @@ class Settings(BaseSettings):
     @property
     def runs_log(self) -> Path:
         return self.data_dir / "runs.jsonl"
+
+    @property
+    def camera_configured(self) -> bool:
+        return bool(self.camera_rtsp_url.strip() or self.camera_host.strip())
 
 
 settings = Settings()

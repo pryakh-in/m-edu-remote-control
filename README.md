@@ -70,6 +70,7 @@ cp .env.example .env        # впишите TEACHER_PASSWORD и SECRET_KEY
    | `TEACHER_PASSWORD` | пароль входа в админку |
    | `SECRET_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(32))"` |
    | `DATA_DIR` | `/data` |
+   | `CAMERA_HOST` / `CAMERA_USER` / `CAMERA_PASSWORD` | Tapo RTSP, если нужна камера в углу |
 
    Остальные переменные — в [`.env.example`](.env.example).
 4. **Persistent storage**: том на `/data` — там хранятся реестр роботов и журнал запусков кода.
@@ -141,3 +142,6 @@ app/
 - Приложение снимает у панели `X-Frame-Options` и CSP, чтобы она открывалась в iframe;
   делайте это только для доверенных адресов роботов из реестра.
 - Ученики не видят ни IP роботов, ни портов — только `/p/<токен>/`.
+- Камера Tapo забирается по RTSP **только TCP** (`ffmpeg -rtsp_transport tcp`) и
+  отдаётся браузеру как MJPEG на `/camera/mjpeg`. UDP не используется, адрес
+  камеры наружу не уходит. Виджет виден учителю и ученику в очереди/на панели.

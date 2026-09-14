@@ -1,0 +1,13 @@
+{% if show_camera %}
+<aside class="camera-dock" id="camera-dock" hidden>
+  <div class="camera-head">
+    <span>Камера лаборатории</span>
+    <button class="camera-toggle" type="button" id="camera-toggle" aria-expanded="true">свернуть</button>
+  </div>
+  <div class="camera-body">
+    <img class="camera-frame" id="camera-frame" alt="Обзор лаборатории" decoding="async">
+    <p class="camera-error" id="camera-error" hidden>Нет сигнала</p>
+  </div>
+</aside>
+<script src="/static/js/camera.js?v={{ asset_version }}"></script>
+{% endif %}

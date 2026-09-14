@@ -26,6 +26,7 @@ def _context(request: Request, **extra) -> dict:
         "request": request,
         "school_name": settings.school_name,
         "lab_name": settings.lab_name,
+        "show_camera": False,
         **extra,
     }
 
@@ -70,7 +71,7 @@ async def wait(request: Request):
         return RedirectResponse("/", status_code=303)
     lab.touch(student.id)
     return _templates(request).TemplateResponse(
-        "wait.html", _context(request, student=student)
+        "wait.html", _context(request, student=student, show_camera=True)
     )
 
 

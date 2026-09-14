@@ -13,6 +13,12 @@ services:
       # а после первой правки в админке реестр хранится в томе /data/robots.json
       ROBOTS_JSON: ${ROBOTS_JSON:-}
       STATUS_POLL_INTERVAL: ${STATUS_POLL_INTERVAL:-12}
+      CAMERA_HOST: ${CAMERA_HOST:-}
+      CAMERA_USER: ${CAMERA_USER:-}
+      CAMERA_PASSWORD: ${CAMERA_PASSWORD:-}
+      CAMERA_PORT: ${CAMERA_PORT:-554}
+      CAMERA_PATH: ${CAMERA_PATH:-/stream2}
+      CAMERA_RTSP_URL: ${CAMERA_RTSP_URL:-}
     volumes:
       - medu-data:/data
     # Не публикуем порт на хост: Coolify/Traefik ходят по внутренней сети.

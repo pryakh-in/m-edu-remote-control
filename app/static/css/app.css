@@ -801,3 +801,69 @@ body.panel-mode {
   color: var(--accent);
   line-height: 1;
 }
+
+/* --- камера в углу --- */
+
+.camera-dock {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 80;
+  width: min(300px, calc(100vw - 24px));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.camera-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.camera-toggle {
+  border: 0;
+  background: var(--surface-muted);
+  color: var(--text-soft);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.72rem;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.camera-body {
+  position: relative;
+  background: #0f1728;
+  aspect-ratio: 16 / 10;
+}
+
+.camera-dock.collapsed .camera-body {
+  display: none;
+}
+
+.camera-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-error {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.8rem;
+  background: rgba(15, 23, 40, 0.72);
+}

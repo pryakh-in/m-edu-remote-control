@@ -13,7 +13,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import proxy, routes_admin, routes_public
+from . import camera, proxy, routes_admin, routes_public
+from .camera import CameraRelay
 from .config import settings
 from .monitor import RobotMonitor
 from .runner import CodeRunner
@@ -44,6 +45,7 @@ async def lifespan(app: FastAPI):
     app.state.lab = lab
     app.state.runner = CodeRunner(lab, settings)
     app.state.monitor = RobotMonitor(lab, settings)
+    app.state.camera = CameraRelay(settings)
     app.state.http = httpx.AsyncClient(
         timeout=httpx.Timeout(20.0, connect=6.0), follow_redirects=False
     )
@@ -56,12 +58,15 @@ async def lifespan(app: FastAPI):
             "Используется пароль учителя по умолчанию — задайте TEACHER_PASSWORD в окружении."
         )
     log.info("Роботов в реестре: %s", len(lab.robots))
+    if settings.camera_configured:
+        log.info("Камера лаборатории: %s (RTSP/TCP → /camera/mjpeg)", settings.camera_host or "url")
 
     await app.state.monitor.start()
     try:
         yield
     finally:
         await app.state.monitor.stop()
+        await app.state.camera.stop()
         await app.state.http.aclose()
 
 
@@ -91,6 +96,7 @@ async def health(request: Request):
 
 app.include_router(routes_public.router)
 app.include_router(routes_admin.router)
+app.include_router(camera.router)
 # Прокси регистрируется последним: его резервный маршрут перехватывает
 # корневые пути панели (/assets, /images, ...) и не должен мешать своим.
 app.include_router(proxy.router)
