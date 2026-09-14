@@ -12,14 +12,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 
-RUN mkdir -p /data && useradd --create-home --uid 10001 medu && chown -R medu /data
-USER medu
+RUN mkdir -p /data
 
-EXPOSE 9000
+EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:9000/health', timeout=4).status == 200 else 1)"
+    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:80/health', timeout=4).status == 200 else 1)"
 
 # proxy-headers нужен, чтобы за реверс-прокси Coolify корректно определялась схема https
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9000", \
+# порт 80 — привилегированный, поэтому процесс запускается от root
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", \
      "--proxy-headers", "--forwarded-allow-ips", "*", "--no-server-header"]
