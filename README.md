@@ -57,9 +57,11 @@ cp .env.example .env        # впишите TEACHER_PASSWORD и SECRET_KEY
 
 ## Развёртывание в Coolify
 
-1. **New Resource → Application → Dockerfile** (или Docker Compose, если нужен
-   `docker-compose.yml` из репозитория) и укажите этот git-репозиторий.
-2. **Port**: `8000`. Health check: `GET /health`.
+1. **New Resource → Application** и укажите этот git-репозиторий.
+   Удобнее **Dockerfile** (Coolify сам проксирует порт контейнера). Если берёте
+   **Docker Compose**, не публикуйте порт на хост — в `docker-compose.yml` стоит
+   только `expose: ["8000"]`, иначе получите `Bind for 0.0.0.0:8000 failed`.
+2. **Ports Exposes**: `8000`. Health check: `GET /health`.
 3. **Environment variables** — минимум:
 
    | Переменная | Значение |
@@ -81,10 +83,10 @@ cp .env.example .env        # впишите TEACHER_PASSWORD и SECRET_KEY
 понадобится туннель до школьной сети; проброс портов каждого робота в интернет не нужен
 и небезопасен — прокси для этого и сделан.
 
-После деплоя проверьте связь из контейнера:
+После деплоя проверьте связь из контейнера (имя подставит Coolify):
 
 ```bash
-docker exec -it medu-lab python -c "import socket; print(socket.create_connection(('192.168.103.192', 9090), 5))"
+docker exec -it <container> python -c "import socket; print(socket.create_connection(('192.168.103.192', 9090), 5))"
 ```
 
 ### Docker Compose локально
@@ -92,6 +94,7 @@ docker exec -it medu-lab python -c "import socket; print(socket.create_connectio
 ```bash
 cp .env.example .env        # заполните TEACHER_PASSWORD и SECRET_KEY
 docker compose up -d --build
+# без Coolify добавьте в docker-compose.yml: ports: ["8000:8000"]
 ```
 
 ## Реестр роботов

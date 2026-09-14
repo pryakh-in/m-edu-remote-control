@@ -1,7 +1,6 @@
 services:
   medu-lab:
     build: .
-    container_name: medu-lab
     restart: unless-stopped
     environment:
       # Обязательно задайте свои значения (в Coolify — во вкладке Environment Variables)
@@ -16,8 +15,10 @@ services:
       STATUS_POLL_INTERVAL: ${STATUS_POLL_INTERVAL:-12}
     volumes:
       - medu-data:/data
-    ports:
-      - "${PORT:-8000}:8000"
+    # Не публикуем порт на хост: Coolify/Traefik ходят по внутренней сети.
+    # Локально без Coolify добавьте: ports: ["8000:8000"]
+    expose:
+      - "8000"
     healthcheck:
       test:
         - CMD
