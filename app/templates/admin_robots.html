@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Реестр роботов{% endblock %}
+
+{% block nav %}
+<a class="btn btn-ghost btn-sm" href="/admin">Пульт</a>
+<a class="btn btn-ghost btn-sm" href="/admin/code">Запуск кода</a>
+<form method="post" action="/admin/logout" style="display:inline">
+  <button class="btn btn-ghost btn-sm" type="submit">Выйти</button>
+</form>
+{% endblock %}
+
+{% block content %}
+<h1>Реестр роботов</h1>
+<p>
+  Список роботов лаборатории. Ученикам адреса не показываются — они работают
+  только через прокси этого сайта. Изменения сохраняются в файл и действуют сразу,
+  перезапуск не нужен.
+</p>
+
+<div class="card" style="max-width:820px">
+  <label class="field">
+    <span>Роботы в формате JSON</span>
+    <textarea id="robots" rows="20" spellcheck="false">{{ robots | tojson(indent=2) }}</textarea>
+  </label>
+  <div class="code-hint" style="margin-bottom:16px">
+    Обязательные поля: <code>id</code>, <code>name</code>, <code>host</code>.
+    Необязательные: <code>panel_port</code> (по умолчанию 80),
+    <code>ros_port</code> (9090), <code>rest_port</code> (8081),
+    <code>enabled</code> (true).
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn" type="button" id="save">Сохранить и опросить</button>
+    <button class="btn btn-ghost" type="button" id="reload">Отменить правки</button>
+  </div>
+  <div class="alert" id="message" hidden></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/robots.js?v={{ asset_version }}"></script>
+{% endblock %}

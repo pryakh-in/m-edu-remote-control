@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Вход в лабораторию{% endblock %}
+
+{% block nav %}
+<a class="btn btn-ghost btn-sm" href="/admin/login">Вход для учителя</a>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <section class="card hero-card">
+    <h1>Доступ к учебным роботам</h1>
+    <p>
+      Напишите своё имя и фамилию. Учитель увидит вашу заявку и подключит вас
+      к свободному роботу — панель управления откроется на этой же странице.
+    </p>
+
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+
+    <form method="post" action="/join" autocomplete="off">
+      <label class="field">
+        <span>Имя и фамилия</span>
+        <input type="text" name="name" maxlength="40" required autofocus
+               placeholder="Например: Иван Петров">
+      </label>
+      <button class="btn" type="submit">Встать в очередь</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Как это работает</h2>
+    <ul class="hero-list">
+      <li><b>1</b><span>Вы оставляете заявку со своим именем.</span></li>
+      <li><b>2</b><span>Учитель выбирает, кого подключить к какому роботу.</span></li>
+      <li><b>3</b><span>Панель управления открывается автоматически — обновлять страницу не нужно.</span></li>
+      <li><b>4</b><span>После занятия учитель освобождает робота для следующего ученика.</span></li>
+    </ul>
+  </section>
+</div>
+{% endblock %}

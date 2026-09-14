@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Пульт учителя{% endblock %}
+
+{% block nav %}
+<span class="chip chip-ok" id="poll-chip"><span class="dot"></span> обновление</span>
+<a class="btn btn-ghost btn-sm" href="/admin/code">Запуск кода</a>
+<a class="btn btn-ghost btn-sm" href="/admin/robots">Роботы</a>
+<button class="btn btn-ghost btn-sm" type="button" data-action="refresh">Опросить роботов</button>
+<form method="post" action="/admin/logout" style="display:inline">
+  <button class="btn btn-ghost btn-sm" type="submit">Выйти</button>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="admin-grid">
+  <section>
+    <div class="section-head">
+      <h1>Роботы лаборатории</h1>
+      <label class="chip" style="cursor:pointer">
+        <input type="checkbox" id="preview-toggle" style="width:14px;height:14px;accent-color:var(--accent)">
+        живые превью панелей
+      </label>
+    </div>
+    <div class="robot-grid" id="robot-grid"></div>
+  </section>
+
+  <aside>
+    <div class="card" style="margin-bottom:18px">
+      <div class="section-head">
+        <h2>Очередь учеников</h2>
+        <span class="chip" id="queue-count">0</span>
+      </div>
+      <ul class="queue-list" id="queue-list"></ul>
+      <div class="empty-state" id="queue-empty">
+        Пока никто не подал заявку. Ученики заходят на главную страницу сайта
+        и вводят своё имя.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h2>Подключены сейчас</h2>
+        <span class="chip" id="connected-count">0</span>
+      </div>
+      <ul class="queue-list" id="connected-list"></ul>
+      <div class="empty-state" id="connected-empty">Никто не подключён к роботам.</div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin.js?v={{ asset_version }}"></script>
+{% endblock %}

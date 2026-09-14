@@ -1,0 +1,33 @@
+services:
+  medu-lab:
+    build: .
+    container_name: medu-lab
+    restart: unless-stopped
+    environment:
+      # Обязательно задайте свои значения (в Coolify — во вкладке Environment Variables)
+      TEACHER_PASSWORD: ${TEACHER_PASSWORD:?задайте пароль учителя}
+      SECRET_KEY: ${SECRET_KEY:?задайте случайный ключ подписи cookie}
+      SCHOOL_NAME: ${SCHOOL_NAME:-Школа №1409}
+      LAB_NAME: ${LAB_NAME:-Лаборатория Promobot M Edu}
+      DATA_DIR: /data
+      # Реестр роботов. Можно не задавать: значения по умолчанию уже в коде,
+      # а после первой правки в админке реестр хранится в томе /data/robots.json
+      ROBOTS_JSON: ${ROBOTS_JSON:-}
+      STATUS_POLL_INTERVAL: ${STATUS_POLL_INTERVAL:-12}
+    volumes:
+      - medu-data:/data
+    ports:
+      - "${PORT:-8000}:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  medu-data:

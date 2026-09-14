@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ lab_name }}{% endblock %} — {{ school_name }}</title>
+  <link rel="preload" href="/static/fonts/montserrat-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/css/fonts.css?v={{ asset_version }}">
+  <link rel="stylesheet" href="/static/css/app.css?v={{ asset_version }}">
+  <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% block layout %}
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="brand-mark">1409</span>
+    <span class="brand-text">
+      <strong>{{ school_name }}</strong>
+      <small>{{ lab_name }}</small>
+    </span>
+  </a>
+  <nav class="topnav">{% block nav %}{% endblock %}</nav>
+</header>
+
+<main class="page">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <span>{{ school_name }} · учебная лаборатория робототехники</span>
+</footer>
+{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

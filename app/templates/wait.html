@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Ожидание подключения{% endblock %}
+
+{% block layout %}
+<div id="waiting-view">
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-mark">1409</span>
+      <span class="brand-text">
+        <strong>{{ school_name }}</strong>
+        <small>{{ lab_name }}</small>
+      </span>
+    </a>
+    <nav class="topnav">
+      <span class="chip chip-accent">{{ student.name }}</span>
+      <button class="btn btn-ghost btn-sm" type="button" data-action="leave">Отменить заявку</button>
+    </nav>
+  </header>
+
+  <main class="page">
+    <div class="wait-wrap">
+      <div class="card wait-card">
+        <div class="pulse">⏳</div>
+        <h1>Заявка принята</h1>
+        <p id="wait-text">Ждём, пока учитель подключит вас к роботу.</p>
+
+        <div class="queue-badge" id="queue-badge" hidden>
+          <span>Вы в очереди</span><strong id="queue-position">—</strong>
+        </div>
+        <p class="muted" id="queue-hint"></p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span>{{ school_name }} · учебная лаборатория робототехники</span>
+  </footer>
+</div>
+
+<div class="panel-shell" id="panel-view">
+  <div class="panel-bar">
+    <div class="who">
+      <span class="brand-mark" style="width:32px;height:32px;border-radius:10px;font-size:0.72rem">1409</span>
+      <strong id="panel-robot">Робот</strong>
+      <span class="chip chip-ok"><span class="dot"></span> подключено</span>
+    </div>
+    <div class="who">
+      <span class="chip chip-accent">{{ student.name }}</span>
+      <button class="btn btn-ghost btn-sm" type="button" data-action="fullscreen">Во весь экран</button>
+      <button class="btn btn-danger btn-sm" type="button" data-action="leave">Завершить</button>
+    </div>
+  </div>
+  <iframe class="panel-frame" id="panel-frame" title="Панель управления роботом"
+          allow="fullscreen; gamepad; xr-spatial-tracking"></iframe>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/student.js?v={{ asset_version }}"></script>
+{% endblock %}

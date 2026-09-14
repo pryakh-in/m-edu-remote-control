@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Одновременный запуск кода{% endblock %}
+
+{% block nav %}
+<a class="btn btn-ghost btn-sm" href="/admin">Пульт</a>
+<a class="btn btn-ghost btn-sm" href="/admin/robots">Роботы</a>
+<form method="post" action="/admin/logout" style="display:inline">
+  <button class="btn btn-ghost btn-sm" type="submit">Выйти</button>
+</form>
+{% endblock %}
+
+{% block content %}
+<h1>Одновременный запуск на роботах</h1>
+<p>
+  Код уходит на выбранных роботов параллельно: Python выполняется действием
+  <code>execute_code</code>, программа из блоков — сохраняется и запускается как
+  Blockly-программа панели.
+</p>
+
+<div class="run-layout">
+  <section class="card">
+    <div class="tabs" role="tablist">
+      <button class="tab active" type="button" data-kind="python">Python</button>
+      <button class="tab" type="button" data-kind="program">Программа JSON</button>
+    </div>
+
+    <label class="field">
+      <span id="source-label">Код на Python</span>
+      <textarea id="source" rows="18" spellcheck="false"></textarea>
+    </label>
+
+    <div class="code-hint" id="hint-python">
+      <label style="display:flex;gap:8px;align-items:center;margin-bottom:8px;cursor:pointer">
+        <input type="checkbox" id="wrap-sdk" checked
+               style="width:16px;height:16px;accent-color:var(--accent)">
+        обернуть код в шаблон SDK робота (подключение и захват управления)
+      </label>
+      С обёрткой доступен объект <code>manipulator</code>, как на вкладке Python в панели:
+      <code>move_to_angles(...)</code> (углы в радианах, параметр
+      <code>velocity_factor</code>), <code>move_to_coordinates(x, y, z)</code>,
+      <code>get_joint_state()</code>. Вывод <code>print</code> вернётся сюда.
+      Снимите галочку, если пишете полностью самостоятельный скрипт.
+    </div>
+    <div class="code-hint" id="hint-program" hidden>
+      Вставьте программу панели с ключом <code>Root</code> или простой список блоков:
+      <code>{"blocks":[{"type":"move_joints","positions":[0,20,20],"velocity":0.3},{"type":"delay","time":1}]}</code>.
+      Поддерживаются <code>move_joints</code>, <code>move_cartesian</code>,
+      <code>point</code>, <code>delay</code>, <code>audio</code>, <code>gpio</code>.
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+      <button class="btn" type="button" id="run">Запустить</button>
+      <button class="btn btn-danger" type="button" id="stop" disabled>Остановить</button>
+      <button class="btn btn-ghost" type="button" id="sample">Вставить пример</button>
+    </div>
+    <div class="alert" id="run-error" hidden></div>
+  </section>
+
+  <aside>
+    <div class="card" style="margin-bottom:18px">
+      <div class="section-head">
+        <h2>Роботы</h2>
+        <button class="btn btn-ghost btn-sm" type="button" id="pick-all">Все доступные</button>
+      </div>
+      <div class="robot-picks" id="robot-picks"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h2>Результат</h2>
+        <label class="chip" style="cursor:pointer">
+          <input type="checkbox" id="clean-output" checked
+                 style="width:14px;height:14px;accent-color:var(--accent)">
+          без служебных строк
+        </label>
+      </div>
+      <div id="results"><div class="empty-state">Запусков ещё не было.</div></div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/code.js?v={{ asset_version }}"></script>
+{% endblock %}
