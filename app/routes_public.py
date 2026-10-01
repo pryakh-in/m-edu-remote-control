@@ -2,19 +2,30 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Form, Request
+from pathlib import Path
+
+from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from .config import settings
+from .programs import ProgramError
 from .proxy import panel_url
+from .runner import CodeRunner
 from .security import clear_student_cookie, set_student_cookie, student_session_id
 from .state import LabState
+
+# Blockly-экспорт «тест программа.json», вшитый в образ: Docker копирует только app/.
+_TEST_PROGRAM = (Path(__file__).with_name("test_program.json")).read_text(encoding="utf-8")
 
 router = APIRouter()
 
 
 def _lab(request: Request) -> LabState:
     return request.app.state.lab
+
+
+def _runner(request: Request) -> CodeRunner:
+    return request.app.state.runner
 
 
 def _templates(request: Request):
@@ -122,6 +133,31 @@ async def api_me(request: Request):
             "panel_url": panel_url(grant.token),
         }
     )
+
+
+@router.post("/api/run-all")
+async def api_run_all(request: Request):
+    """Запустить вшитую тестовую программу на всех роботах, которые сейчас на связи."""
+    lab = _lab(request)
+    await request.app.state.monitor.poll_all()
+    robot_ids = [
+        robot.id
+        for robot in lab.enabled_robots
+        if lab.status.get(robot.id) is not None and lab.status[robot.id].ros_online
+    ]
+    if not robot_ids:
+        return JSONResponse(
+            {"ok": False, "detail": "Нет доступных роботов", "robots": []},
+            status_code=409,
+        )
+
+    try:
+        job = await _runner(request).start("program", _TEST_PROGRAM, robot_ids)
+    except (ProgramError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"ok": True, "job": job.view()}
 
 
 @router.post("/api/leave")
