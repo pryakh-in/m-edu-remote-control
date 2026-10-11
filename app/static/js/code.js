@@ -57,6 +57,8 @@
   var results = document.getElementById("results");
   var runButton = document.getElementById("run");
   var stopButton = document.getElementById("stop");
+  var shutdownButton = document.getElementById("shutdown");
+  var lowerBoom = document.getElementById("lower-boom");
   var sampleButton = document.getElementById("sample");
   var pickAll = document.getElementById("pick-all");
   var errorBox = document.getElementById("run-error");
@@ -203,6 +205,7 @@
 
     stopButton.disabled = job.finished;
     runButton.disabled = !job.finished;
+    shutdownButton.disabled = !job.finished;
     if (job.finished && jobTimer) {
       window.clearInterval(jobTimer);
       jobTimer = null;
@@ -240,6 +243,7 @@
     }
 
     runButton.disabled = true;
+    shutdownButton.disabled = true;
     request("/admin/api/run", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -265,6 +269,66 @@
         errorBox.textContent = error.message;
         errorBox.hidden = false;
         runButton.disabled = false;
+        shutdownButton.disabled = false;
+      });
+  });
+
+  shutdownButton.addEventListener("click", function () {
+    var robotIds = selectedIds();
+    errorBox.hidden = true;
+
+    if (!robotIds.length) {
+      window.alert("Выберите хотя бы одного робота.");
+      return;
+    }
+
+    var lower = lowerBoom.checked;
+    var names = robots
+      .filter(function (robot) {
+        return robotIds.indexOf(robot.id) !== -1;
+      })
+      .map(function (robot) {
+        return robot.name;
+      })
+      .join(", ");
+    var question = lower
+      ? "Выключить роботов: " +
+        names +
+        "?\n\nСначала каждый выполнит программу опускания стрелы, и только потом выключится."
+      : "Выключить роботов сразу, без опускания стрелы: " +
+        names +
+        "?\n\nЕсли стрела поднята, она может упасть.";
+    if (!window.confirm(question)) {
+      return;
+    }
+
+    runButton.disabled = true;
+    shutdownButton.disabled = true;
+    request("/admin/api/shutdown", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        robot_ids: robotIds,
+        lower_boom: lower,
+      }),
+    })
+      .then(function (data) {
+        if (!data) {
+          return;
+        }
+        activeJob = data.job.id;
+        renderJob(data.job);
+        if (jobTimer) {
+          window.clearInterval(jobTimer);
+        }
+        jobTimer = window.setInterval(pollJob, 1200);
+      })
+      .catch(function (error) {
+        errorBox.textContent = error.message;
+        errorBox.hidden = false;
+        window.alert(error.message);
+        runButton.disabled = false;
+        shutdownButton.disabled = false;
       });
   });
 

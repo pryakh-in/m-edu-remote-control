@@ -71,6 +71,16 @@
         <button class="btn btn-ghost btn-sm" type="button" id="pick-all">Все доступные</button>
       </div>
       <div class="robot-picks" id="robot-picks"></div>
+      <div class="shutdown-box">
+        <label for="lower-boom">
+          <input type="checkbox" id="lower-boom" checked>
+          <span>Сначала опустить стрелу</span>
+        </label>
+        <p class="muted">
+          Перед выключением каждый робот выполнит программу «выключение»: стрела опустится на стол.
+        </p>
+        <button class="btn btn-danger" type="button" id="shutdown">Выключить выбранных</button>
+      </div>
     </div>
 
     <div class="card">

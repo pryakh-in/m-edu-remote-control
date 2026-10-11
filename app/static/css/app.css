@@ -726,6 +726,40 @@ body.panel-mode {
   cursor: not-allowed;
 }
 
+.shutdown-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.shutdown-box label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.shutdown-box input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--accent);
+}
+
+.shutdown-box .muted {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.shutdown-box .btn {
+  width: 100%;
+}
+
 .result {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);

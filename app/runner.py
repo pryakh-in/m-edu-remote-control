@@ -8,6 +8,7 @@ import logging
 import secrets
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Literal
 
 from .config import Robot, Settings
@@ -19,6 +20,10 @@ from .programs import (
 from .rosbridge import (
     EXECUTE_CODE_ACTION,
     EXECUTE_CODE_TYPE,
+    EXIT_STRATEGY_SERVICE,
+    EXIT_STRATEGY_SHUTDOWN,
+    EXIT_STRATEGY_TIMEOUT,
+    EXIT_STRATEGY_TYPE,
     PLAY_PROGRAM_ACTION,
     PLAY_PROGRAM_TYPE,
     SAVE_PROGRAM_SERVICE,
@@ -30,11 +35,28 @@ from .state import LabState
 
 log = logging.getLogger(__name__)
 
-RunKind = Literal["python", "program"]
+RunKind = Literal["python", "program", "shutdown"]
 RunStatus = Literal["running", "done", "error", "stopped"]
 
 MAX_JOBS_KEPT = 30
 MAX_FEEDBACK_LINES = 40
+
+# Blockly-экспорт, который опускает стрелу. В образ попадает копия в app/:
+# Docker копирует только этот каталог. Рядом с репозиторием тот же файл
+# «выключение.json» имеет приоритет, чтобы правки применялись без пересборки.
+_BUNDLED_SHUTDOWN_PROGRAM = Path(__file__).with_name("shutdown_program.json")
+_ROOT_SHUTDOWN_PROGRAM = Path(__file__).resolve().parents[1] / "выключение.json"
+
+
+def _shutdown_program() -> str:
+    path = _ROOT_SHUTDOWN_PROGRAM if _ROOT_SHUTDOWN_PROGRAM.is_file() else _BUNDLED_SHUTDOWN_PROGRAM
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ProgramError(f"Не удалось прочитать программу опускания стрелы: {exc}") from exc
+    if not text.strip():
+        raise ProgramError("Программа опускания стрелы пуста")
+    return text
 
 
 @dataclass
@@ -114,14 +136,7 @@ class CodeRunner:
         requirements: list[str] | None = None,
         wrap_sdk: bool = True,
     ) -> RunJob:
-        robots: list[Robot] = []
-        for robot_id in robot_ids:
-            robot = self.state.robot(robot_id)
-            if robot is None:
-                raise KeyError(f"Робот {robot_id} не найден")
-            robots.append(robot)
-        if not robots:
-            raise ValueError("Не выбран ни один робот")
+        robots = self._resolve_robots(robot_ids)
 
         exec_kind, payload = compile_run(kind, source, wrap_sdk=wrap_sdk)
 
@@ -138,6 +153,41 @@ class CodeRunner:
             )
         )
         return job
+
+    async def shutdown(self, robot_ids: list[str], *, lower_boom: bool = True) -> RunJob:
+        """Выключить роботов. При lower_boom сначала выполняется программа опускания стрелы."""
+        robots = self._resolve_robots(robot_ids)
+        exec_kind = "python"
+        payload = ""
+        if lower_boom:
+            exec_kind, payload = compile_run("program", _shutdown_program())
+
+        label = (
+            "Выключение: сначала опустить стрелу"
+            if lower_boom
+            else "Выключение без опускания стрелы"
+        )
+        job = RunJob(id=secrets.token_hex(6), kind="shutdown", source=label)
+        job.runs = {
+            robot.id: RobotRun(robot_id=robot.id, robot_name=robot.name) for robot in robots
+        }
+        self.jobs[job.id] = job
+        self._trim()
+        job.task = asyncio.create_task(
+            self._shutdown_all(job, robots, payload if lower_boom else None, exec_kind)
+        )
+        return job
+
+    def _resolve_robots(self, robot_ids: list[str]) -> list[Robot]:
+        robots: list[Robot] = []
+        for robot_id in robot_ids:
+            robot = self.state.robot(robot_id)
+            if robot is None:
+                raise KeyError(f"Робот {robot_id} не найден")
+            robots.append(robot)
+        if not robots:
+            raise ValueError("Не выбран ни один робот")
+        return robots
 
     async def stop(self, job_id: str) -> None:
         job = self.jobs.get(job_id)
@@ -225,6 +275,106 @@ class CodeRunner:
             run.output = str(values.get("out") or "").strip()
             run.error = str(values.get("err") or "").strip()
             run.status = "error" if self._looks_failed(run) else "done"
+        finally:
+            run.finished_at = time.time()
+
+    async def _shutdown_all(
+        self,
+        job: RunJob,
+        robots: list[Robot],
+        payload: str | None,
+        exec_kind: str,
+    ) -> None:
+        await asyncio.gather(
+            *(self._shutdown_one(job, robot, payload, exec_kind) for robot in robots),
+            return_exceptions=True,
+        )
+        self._log_job(job)
+
+    async def _shutdown_one(
+        self,
+        job: RunJob,
+        robot: Robot,
+        payload: str | None,
+        exec_kind: str,
+    ) -> None:
+        run = job.runs[robot.id]
+
+        def note(values: dict[str, Any]) -> None:
+            message = values.get("message") or values.get("feedback") or json.dumps(
+                values, ensure_ascii=False
+            )
+            text = str(message).strip()
+            if text and (not run.feedback or run.feedback[-1] != text):
+                run.feedback.append(text)
+                del run.feedback[:-MAX_FEEDBACK_LINES]
+
+        try:
+            async with RosBridgeClient(robot.ros_url, timeout=self.settings.ros_timeout) as client:
+                if payload is not None:
+                    note({"message": "Опускаю стрелу"})
+                    if exec_kind == "python":
+                        values = await client.run_action(
+                            EXECUTE_CODE_ACTION,
+                            EXECUTE_CODE_TYPE,
+                            {"code": payload, "python_version": "", "requirements": []},
+                            timeout=self.settings.code_timeout,
+                            on_feedback=note,
+                            cancel_event=job.cancel,
+                        )
+                    else:
+                        await client.call_service(
+                            SAVE_PROGRAM_SERVICE,
+                            SAVE_PROGRAM_TYPE,
+                            {"program_name": DEFAULT_PROGRAM_NAME, "program_json": payload},
+                        )
+                        values = await client.run_action(
+                            PLAY_PROGRAM_ACTION,
+                            PLAY_PROGRAM_TYPE,
+                            {"program_name": DEFAULT_PROGRAM_NAME},
+                            timeout=self.settings.code_timeout,
+                            on_feedback=note,
+                            cancel_event=job.cancel,
+                        )
+                    code = values.get("result_code")
+                    run.result_code = code if isinstance(code, int) else None
+                    run.output = str(values.get("out") or "").strip()
+                    run.error = str(values.get("err") or "").strip()
+                    if self._looks_failed(run):
+                        run.status = "error"
+                        detail = run.error or "программа опускания стрелы завершилась с ошибкой"
+                        run.error = f"Стрела не опущена, робот не выключен: {detail}"
+                        return
+
+                if job.cancel.is_set():
+                    run.status = "stopped"
+                    run.error = "Выключение отменено"
+                    return
+
+                note({"message": "Выключаю манипулятор"})
+                result = await client.call_service(
+                    EXIT_STRATEGY_SERVICE,
+                    EXIT_STRATEGY_TYPE,
+                    {"action": EXIT_STRATEGY_SHUTDOWN},
+                    timeout=EXIT_STRATEGY_TIMEOUT,
+                )
+                if result.get("result") is not True:
+                    run.status = "error"
+                    run.error = str(
+                        result.get("message") or "Робот не подтвердил выключение"
+                    )
+                    return
+            run.status = "done"
+            accepted = "Команда выключения принята"
+            run.output = f"{run.output}\n{accepted}".strip() if run.output else accepted
+            self.state.free_robot(robot.id)
+        except RosBridgeError as exc:
+            run.status = "stopped" if job.cancel.is_set() else "error"
+            run.error = str(exc)
+        except Exception as exc:  # noqa: BLE001 - показываем учителю любую ошибку
+            log.exception("Ошибка выключения робота %s", robot.id)
+            run.status = "error"
+            run.error = str(exc)
         finally:
             run.finished_at = time.time()
 

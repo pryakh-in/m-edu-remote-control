@@ -35,6 +35,11 @@ GET_VERSION_SERVICE = "/pm_api/get_version_software"
 GET_VERSION_TYPE = "pm_api_msgs/srv/GetVersionSoftware"
 STOP_MOVING_SERVICE = "/pm_api/stop_moving"
 STOP_MOVING_TYPE = "std_srvs/srv/Trigger"
+# Кнопка «Выключить манипулятор» в панели M Control.
+EXIT_STRATEGY_SERVICE = "/pm_api/exit_strategy"
+EXIT_STRATEGY_TYPE = "pm_api_msgs/srv/ExitStrategy"
+EXIT_STRATEGY_SHUTDOWN = 1
+EXIT_STRATEGY_TIMEOUT = 30.0
 
 # Значения pm_api_msgs CobotState из прошивки панели управления.
 COBOT_STATES = {

@@ -204,6 +204,25 @@ async def api_open(request: Request, payload: RobotPayload):
     return {"ok": True, "panel_url": panel_url(grant.token)}
 
 
+class ShutdownPayload(BaseModel):
+    robot_ids: list[str] = Field(min_length=1)
+    lower_boom: bool = True
+
+
+@router.post("/api/shutdown", dependencies=[Depends(require_teacher)])
+async def api_shutdown(request: Request, payload: ShutdownPayload):
+    """Выключить выбранных роботов. По умолчанию сначала опускается стрела."""
+    runner = _runner(request)
+    try:
+        job = await runner.shutdown(payload.robot_ids, lower_boom=payload.lower_boom)
+    except (ProgramError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except KeyError as exc:
+        detail = exc.args[0] if exc.args and isinstance(exc.args[0], str) else str(exc)
+        raise HTTPException(status_code=404, detail=detail) from exc
+    return {"ok": True, "job": job.view()}
+
+
 @router.post("/api/stop-robot", dependencies=[Depends(require_teacher)])
 async def api_stop_robot(request: Request, payload: RobotPayload):
     lab = _lab(request)
